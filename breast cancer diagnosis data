@@ -1,0 +1,284 @@
+Bdf = pd.read_csv("Breast.Cancer.Project.csv") 
+#Bdf.tail()
+#Bdf.head()
+
+Diag = Bdf[['Diagnosis']]
+TM = Bdf[['texture.Mean']]
+#Bdf
+BdfX = Bdf.iloc[0:,2:]
+#Bdf.describe()
+#Diag
+#Bdf.describe(include='all')
+
+
+from sklearn.preprocessing import OneHotEncoder
+OHE = OneHotEncoder(sparse=False,drop='first')
+#Bdf[['Diagnosis']]
+
+
+#Bdf.Diagnosis = labelencoder_Y.fit_transform(Bdf.Diagnosis) 
+Bdf[['Diagnosis']] = OHE.fit_transform(Bdf[['Diagnosis']]) 
+BdfX = Bdf.iloc[0:,2:]
+BdfY = Bdf[['Diagnosis']]
+BdfX
+
+
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(BdfX,BdfY,test_size=0.25,random_state=42)
+print('Training dataset shape:', X_train.shape, y_train.shape)   #(nrow,ncolumn), nrow,ncolumn
+print('Testing dataset shape:', X_test.shape, y_test.shape)
+
+#CHANGE Y valued to 1d array
+y_train = y_train.values.ravel()
+y_test = y_test.values.ravel()
+
+
+
+# data normalization with sklearn
+from sklearn.preprocessing import MinMaxScaler
+
+# fit scaler on training data
+norm = MinMaxScaler().fit(X_train)
+
+# transform training data
+X_train_norm = norm.transform(X_train)
+
+# transform testing dataabs
+X_test_norm = norm.transform(X_test)
+
+
+
+#SCALING DATA OR GET ERROR WITH LOGISTIC REGRESSION
+#Feature Scaling
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+X_trainS = sc.fit_transform(X_train_norm)
+X_testS = sc.transform(X_test_norm)
+
+
+
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
+
+
+
+from sklearn.linear_model import LogisticRegression
+classifierLR = LogisticRegression(random_state = 42)
+classifierLR.fit(X_trainS, y_train)
+Y_predLR = classifierLR.predict(X_testS)
+print(accuracy_score(Y_predLR, y_test))
+cmLR = confusion_matrix(y_test,Y_predLR)
+cmLR
+
+
+from sklearn.ensemble import RandomForestClassifier
+classifierRF = RandomForestClassifier(n_estimators = 100, criterion = 'entropy', random_state = 42)
+classifierRF.fit(X_trainS, y_train)
+Y_predRF = classifierRF.predict(X_testS)
+print(accuracy_score(Y_predRF, y_test))
+cmRF = confusion_matrix(y_test,Y_predRF)
+cmRF
+
+
+from sklearn.neighbors import KNeighborsClassifier
+classifierKNN = KNeighborsClassifier(n_neighbors = 5, metric = 'minkowski', p = 2)
+classifierKNN.fit(X_trainS, y_train)
+Y_predKNN = classifierKNN.predict(X_testS)
+print(accuracy_score(Y_predKNN, y_test))
+cmKNN = confusion_matrix(y_test,Y_predKNN)
+cmKNN
+
+
+#Using SVC method of svm class to use Support Vector Machine Algorithm
+from sklearn.svm import SVC
+classifierSVC = SVC(kernel = 'linear', random_state = 42)
+classifierSVC.fit(X_trainS, y_train)
+Y_predSVC = classifierSVC.predict(X_testS)
+print(accuracy_score(Y_predSVC, y_test))
+cmSVC = confusion_matrix(y_test,Y_predSVC)
+cmSVC
+
+
+#Using SVC method of svm class to use Kernel SVM Algorithm
+from sklearn.svm import SVC
+classifierSVCR = SVC(kernel = 'rbf', random_state = 42)
+classifierSVCR.fit(X_trainS, y_train)
+Y_predSVCR = classifierSVCR.predict(X_testS)
+print(accuracy_score(Y_predSVCR, y_test))
+cmSVCR = confusion_matrix(y_test,Y_predSVC)
+cmSVCR
+
+
+from sklearn.ensemble import AdaBoostClassifier
+clfABC = AdaBoostClassifier(n_estimators=100, random_state=42)
+clfABC.fit(X_trainS, y_train)
+Y_predABC = clfABC.predict(X_testS)
+cmABC = confusion_matrix(y_test,Y_predABC)
+print(accuracy_score(Y_predABC, y_test))
+cmABC
+
+
+from sklearn.tree import DecisionTreeClassifier
+classifierDTC = DecisionTreeClassifier(criterion = 'entropy', random_state = 42)
+classifierDTC.fit(X_trainS, y_train)
+Y_predDTC = classifierDTC.predict(X_testS)
+cmDTC = confusion_matrix(y_test,Y_predDTC)
+print(accuracy_score(Y_predDTC, y_test))
+cmDTC
+
+
+
+#Using GaussianNB method of naïve_bayes class to use Naïve Bayes Algorithm
+from sklearn.naive_bayes import GaussianNB
+classifierGNB = GaussianNB()
+classifierGNB.fit(X_trainS, y_train)
+Y_predGNB = classifierGNB.predict(X_testS)
+cmGNB = confusion_matrix(y_test,Y_predGNB)
+print(accuracy_score(Y_predGNB, y_test))
+cmGNB
+
+
+# Build RF classifier to use in feature selection
+from sklearn.ensemble import RandomForestClassifier
+from mlxtend.feature_selection import SequentialFeatureSelector as sfs
+import numpy as np  #for ravel to work
+
+clf = RandomForestClassifier(n_estimators=100, n_jobs=-1)
+#clf = RandomForestClassifier(n_estimators=100, n_jobs=-1, random_state= 42)
+
+# Build step forward feature selection
+sfs1 = sfs(clf,
+           k_features=(1,10),
+           forward=True,
+           floating=False,
+           verbose=2,
+           scoring='accuracy',
+           cv=5)
+
+# Perform SFFS
+sfs1 = sfs1.fit(X_train, y_train)
+
+sfs1.k_feature_names_
+sfs1.k_score_
+sfs1.k_feature_idx_
+
+
+#WITH SELECTED FEATURES in 'project 3.ipynb'
+#('FractalDimension.Mean',
+# 'texture.Worse',
+# 'perimeter.Worse',
+ #'area.Worse',
+ #'smoothness.Worse'
+ 
+ 
+ Diag = Bdf[['Diagnosis']]
+#TM = Bdf[['texture.Mean']]
+
+#Bdf.describe(include='all')
+JJ = Diag.join(Bdf[['FractalDimension.Mean']])
+JJ = JJ.join(Bdf[['perimeter.Worse']])
+JJ = JJ.join(Bdf[['smoothness.Worse']])
+JJ=JJ.join(Bdf[['area.Worse']])
+JJ=JJ.join(Bdf[['texture.Worse']])
+
+
+BdfX3 = JJ.iloc[0:,1:]
+BdfY3 = JJ[['Diagnosis']]
+
+
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(BdfX2,BdfY2,test_size=0.25,random_state=42)
+print('Training dataset shape:', X_train.shape, y_train.shape)   #(nrow,ncolumn), nrow,ncolumn
+print('Testing dataset shape:', X_test.shape, y_test.shape)
+
+#CHANGE Y valued to 1d array
+y_train = y_train.values.ravel()
+y_test = y_test.values.ravel()
+
+
+# data normalization with sklearn
+from sklearn.preprocessing import MinMaxScaler
+
+# fit scaler on training data
+norm = MinMaxScaler().fit(X_train)
+
+# transform training data
+X_train_norm = norm.transform(X_train)
+
+# transform testing dataabs
+X_test_norm = norm.transform(X_test)
+
+
+#SCALING DATA OR GET ERROR WITH LOGISTIC REGRESSION
+#Feature Scaling
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+X_trainS = sc.fit_transform(X_train_norm)
+X_testS = sc.transform(X_test_norm)
+
+
+
+from sklearn.linear_model import LogisticRegression
+classifierLR = LogisticRegression(random_state = 42)
+classifierLR.fit(X_trainS, y_train)
+Y_predLR = classifierLR.predict(X_testS)
+print(accuracy_score(Y_predLR, y_test))
+cmLR = confusion_matrix(y_test,Y_predLR)
+cmLR
+
+
+
+from sklearn.svm import SVC
+classifierSVCR = SVC(kernel = 'rbf', random_state = 42)
+classifierSVCR.fit(X_trainS, y_train)
+Y_predSVCR = classifierSVCR.predict(X_testS)
+print(accuracy_score(Y_predSVCR, y_test))
+cmSVCR = confusion_matrix(y_test,Y_predSVC)
+cmSVCR
+
+
+from sklearn.ensemble import AdaBoostClassifier
+clfABC = AdaBoostClassifier(n_estimators=100, random_state=42)
+clfABC.fit(X_trainS, y_train)
+Y_predABC = clfABC.predict(X_testS)
+cmABC = confusion_matrix(y_test,Y_predABC)
+print(accuracy_score(Y_predABC, y_test))
+cmABC
+
+
+from sklearn.tree import DecisionTreeClassifier
+classifierDTC = DecisionTreeClassifier(criterion = 'entropy', random_state = 42)
+classifierDTC.fit(X_trainS, y_train)
+Y_predDTC = classifierDTC.predict(X_testS)
+cmDTC = confusion_matrix(y_test,Y_predDTC)
+print(accuracy_score(Y_predDTC, y_test))
+cmDTC
+
+
+from sklearn.naive_bayes import GaussianNB
+classifierGNB = GaussianNB()
+classifierGNB.fit(X_trainS, y_train)
+Y_predGNB = classifierGNB.predict(X_testS)
+cmGNB = confusion_matrix(y_test,Y_predGNB)
+print(accuracy_score(Y_predGNB, y_test))
+cmGNB
+
+
+from sklearn.ensemble import RandomForestClassifier
+classifierRF = RandomForestClassifier(n_estimators = 100, criterion = 'entropy', random_state = 42)
+classifierRF.fit(X_trainS, y_train)
+Y_predRF = classifierRF.predict(X_testS)
+print(accuracy_score(Y_predRF, y_test))
+cmRF = confusion_matrix(y_test,Y_predRF)
+cmRF
+
+
+from sklearn.neighbors import KNeighborsClassifier
+classifierKNN = KNeighborsClassifier(n_neighbors = 100, metric = 'minkowski', p = 2)
+classifierKNN.fit(X_trainS, y_train)
+Y_predKNN = classifierKNN.predict(X_testS)
+print(accuracy_score(Y_predKNN, y_test))
+cmKNN = confusion_matrix(y_test,Y_predKNN)
+cmKNN
